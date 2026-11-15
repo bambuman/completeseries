@@ -57,7 +57,25 @@ describe("ResultsActionsMenu", () => {
     );
 
     expect(html).toContain("Listening (7)");
-    expect(html).toContain('aria-pressed="true"');
+    expect(html).toContain('<option value="listening" selected="">');
+    expect(html).toContain("results-filter-control--active");
     expect(html).toContain("Recently listened");
+  });
+  it("offers less-confident results in the series dropdown when listening is available", () => {
+    const html = renderToStaticMarkup(
+      <ResultsActionsMenu
+        listeningSeriesCount={3}
+        lowConfidenceCount={2}
+        showLowConfidenceResults={true}
+        sortOrder="seriesAsc"
+        onListeningOnlyChange={() => undefined}
+        onOpenTool={() => undefined}
+        onShowLowConfidenceChange={() => undefined}
+        onSortOrderChange={() => undefined}
+      />
+    );
+
+    expect(html).toContain('<option value="lessConfident" selected="">+ Less confident (2)</option>');
+    expect(html).not.toContain("results-command-toggle");
   });
 });
