@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import {
   findManualBookMatch,
   type ManualBookMatch,
@@ -17,6 +17,7 @@ import {
   type MissingBooksManualBookSource,
 } from "./missingBookDetailHelpers";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
+import { splitBooksByRelease } from "./releaseStatus";
 
 const closeIconUrl = new URL("../../assets/close.svg", import.meta.url).href;
 
@@ -70,6 +71,12 @@ export function MissingBooksModal({
           )
       )
     : group.books;
+  const { available, upcoming } = splitBooksByRelease(visibleBooks);
+  const showSectionHeadings = upcoming.length > 0;
+  const releaseSections = [
+    { title: "Available now", books: available },
+    { title: "Coming soon", books: upcoming },
+  ].filter((section) => section.books.length > 0);
 
   useBodyScrollLock();
 
@@ -99,19 +106,28 @@ export function MissingBooksModal({
         {isMergedGroup(group) ? <MergedSeriesSummary group={group} /> : null}
 
         <div className="books-modal-grid">
-          {visibleBooks.map((book) => (
-            <MissingBookDetail
-              book={book}
-              diagnostic={group.diagnosticsByAsin[book.asin]}
-              group={group}
-              isHidden={isHiddenBook(hiddenItems, group, book)}
-              manualBookMatchSource={manualBookMatchSource}
-              key={book.asin}
-              onHideItem={onHideItem}
-              onManualMatchSaved={setManualMatchMessage}
-              onSaveManualBookMatch={onSaveManualBookMatch}
-              onUnhideItem={onUnhideItem}
-            />
+          {releaseSections.map((section) => (
+            <Fragment key={section.title}>
+              {showSectionHeadings ? (
+                <h3 className="books-modal-section-title">
+                  {section.title} ({section.books.length})
+                </h3>
+              ) : null}
+              {section.books.map((book) => (
+                <MissingBookDetail
+                  book={book}
+                  diagnostic={group.diagnosticsByAsin[book.asin]}
+                  group={group}
+                  isHidden={isHiddenBook(hiddenItems, group, book)}
+                  manualBookMatchSource={manualBookMatchSource}
+                  key={book.asin}
+                  onHideItem={onHideItem}
+                  onManualMatchSaved={setManualMatchMessage}
+                  onSaveManualBookMatch={onSaveManualBookMatch}
+                  onUnhideItem={onUnhideItem}
+                />
+              ))}
+            </Fragment>
           ))}
           {visibleBooks.length === 0 ? (
             <EmptyState compact title="No visible missing books remain">

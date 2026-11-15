@@ -20,6 +20,7 @@ import {
 import { ResultsSeriesGrid } from "./ResultsSeriesGrid";
 import { ResultsSummaryHeader } from "./ResultsSummaryHeader";
 import type { ConnectionFormValues } from "../setup/scanFormTypes";
+import { countBooksByRelease, type ResultsReleaseFilter } from "./releaseStatus";
 import { useResultsDisplayPreferences } from "./useResultsDisplayPreferences";
 import {
   buildVisibleMissingGroups,
@@ -105,10 +106,12 @@ export function ResultsView({
   const [showLowConfidenceResults, setShowLowConfidenceResults] = useState(false);
   const [activeTool, setActiveTool] = useState<ResultsTool>(null);
   const {
+    changeReleaseFilter,
     changeShowHiddenItems,
     changeSortOrder,
     clearResultsDisplayPreferences,
     importResultsPreferences,
+    releaseFilter,
     showHiddenItems,
     sortOrder,
   } = useResultsDisplayPreferences();
@@ -116,14 +119,20 @@ export function ResultsView({
   const displayedMissingGroups = showLowConfidenceResults
     ? [...result.missingGroups, ...lowConfidenceMissingGroups]
     : result.missingGroups;
-  const visibleGroups = buildVisibleMissingGroups(
-    displayedMissingGroups,
-    hiddenItems,
-    manualBookMatches,
-    lastScanOptions?.region ?? "uk",
-    showHiddenItems,
-    sortOrder
-  );
+  const buildGroupsForReleaseFilter = (filter: ResultsReleaseFilter) =>
+    buildVisibleMissingGroups(
+      displayedMissingGroups,
+      hiddenItems,
+      manualBookMatches,
+      lastScanOptions?.region ?? "uk",
+      showHiddenItems,
+      sortOrder,
+      filter
+    );
+  const allReleaseGroups = buildGroupsForReleaseFilter("all");
+  const visibleGroups =
+    releaseFilter === "all" ? allReleaseGroups : buildGroupsForReleaseFilter(releaseFilter);
+  const releaseCounts = countBooksByRelease(allReleaseGroups);
   const hiddenResultCounts = countHiddenResultItems(displayedMissingGroups, hiddenItems);
   const resultsSummary = buildResultsViewSummary(result);
   const selectedManualBookMatchSource = selectedGroup
@@ -144,12 +153,15 @@ export function ResultsView({
         matchedSeriesCount={result.matchedSeriesCount}
         mergedResultGroupCount={resultsSummary.mergedResultGroupCount}
         unresolvedSeriesCount={result.unresolvedSeries.length}
-        visibleSeriesCount={visibleGroups.length}
+        visibleSeriesCount={allReleaseGroups.length}
       />
 
       <ResultsActionsMenu
         lowConfidenceCount={lowConfidenceMissingGroups.length}
         onOpenTool={setActiveTool}
+        onReleaseFilterChange={changeReleaseFilter}
+        releaseCounts={releaseCounts}
+        releaseFilter={releaseFilter}
         onScanAgain={
           lastScanOptions ? () => void onRescanWithOptions(lastScanOptions) : undefined
         }

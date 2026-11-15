@@ -1,13 +1,16 @@
+import { RESULTS_RELEASE_FILTERS, type ResultsReleaseFilter } from "./releaseStatus";
 import type { ResultsSortOrder } from "./visibleResults";
 
 export const RESULTS_PREFERENCES_STORAGE_KEY = "completeSeries.resultsPreferences.v2";
 
 export type ResultsPreferences = {
+  releaseFilter: ResultsReleaseFilter;
   showHiddenItems: boolean;
   sortOrder: ResultsSortOrder;
 };
 
 export const defaultResultsPreferences: ResultsPreferences = {
+  releaseFilter: "all",
   showHiddenItems: false,
   sortOrder: "seriesAsc",
 };
@@ -19,6 +22,8 @@ const SORT_ORDERS: ResultsSortOrder[] = [
   "authorDesc",
   "missingDesc",
   "missingAsc",
+  "releaseNext",
+  "releaseNewest",
   "scanOrder",
 ];
 
@@ -98,6 +103,11 @@ function normaliseResultsPreferences(
   preferences: Partial<ResultsPreferences>
 ): ResultsPreferences {
   return {
+    releaseFilter: RESULTS_RELEASE_FILTERS.includes(
+      preferences.releaseFilter as ResultsReleaseFilter
+    )
+      ? (preferences.releaseFilter as ResultsReleaseFilter)
+      : defaultResultsPreferences.releaseFilter,
     showHiddenItems:
       typeof preferences.showHiddenItems === "boolean"
         ? preferences.showHiddenItems

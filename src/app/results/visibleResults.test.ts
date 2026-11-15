@@ -187,3 +187,105 @@ function buildBook(
     series: [{ asin: "DISC_ASIN", name: "Discworld", position }],
   };
 }
+
+describe("buildVisibleMissingGroups release dates", () => {
+  const NOW = new Date(2026, 10, 15);
+
+  it("keeps only released or upcoming books and drops groups left empty", () => {
+    const groups = [
+      buildGroup("Mixed", "SERIES_M", [
+        withRelease(buildBook("Mixed 1", "M1", "1"), "2025-01-01"),
+        withRelease(buildBook("Mixed 2", "M2", "2"), "2026-12-08"),
+      ]),
+      buildGroup("Released Only", "SERIES_R", [
+        withRelease(buildBook("Released 1", "R1", "1"), "2024-05-05"),
+      ]),
+    ];
+
+    const upcoming = buildVisibleMissingGroups(
+      groups,
+      [],
+      [],
+      "us",
+      false,
+      "seriesAsc",
+      "upcoming",
+      NOW
+    );
+    const released = buildVisibleMissingGroups(
+      groups,
+      [],
+      [],
+      "us",
+      false,
+      "seriesAsc",
+      "released",
+      NOW
+    );
+
+    expect(
+      upcoming.map((group) => [group.seriesName, group.books.map((book) => book.asin)])
+    ).toEqual([
+      ["Mixed", ["M2"]],
+    ]);
+    expect(
+      released.map((group) => [group.seriesName, group.books.map((book) => book.asin)])
+    ).toEqual([
+      ["Mixed", ["M1"]],
+      ["Released Only", ["R1"]],
+    ]);
+  });
+
+  it("sorts series by their next upcoming release, then series without one", () => {
+    const groups = [
+      buildGroup("Later", "SERIES_L", [withRelease(buildBook("L", "L1", "1"), "2027-03-01")]),
+      buildGroup("None", "SERIES_N", [withRelease(buildBook("N", "N1", "1"), "2025-01-01")]),
+      buildGroup("Sooner", "SERIES_S", [withRelease(buildBook("S", "S1", "1"), "2026-12-08")]),
+    ];
+
+    const result = buildVisibleMissingGroups(
+      groups,
+      [],
+      [],
+      "us",
+      false,
+      "releaseNext",
+      "all",
+      NOW
+    );
+
+    expect(result.map((group) => group.seriesName)).toEqual(["Sooner", "Later", "None"]);
+  });
+
+  it("sorts series by their most recent released book", () => {
+    const groups = [
+      buildGroup("Old", "SERIES_O", [withRelease(buildBook("O", "O1", "1"), "2020-01-01")]),
+      buildGroup("Future Only", "SERIES_F", [withRelease(buildBook("F", "F1", "1"), "2027-01-01")]),
+      buildGroup("Recent", "SERIES_R", [withRelease(buildBook("R", "R1", "1"), "2026-11-01")]),
+    ];
+
+    const result = buildVisibleMissingGroups(
+      groups,
+      [],
+      [],
+      "us",
+      false,
+      "releaseNewest",
+      "all",
+      NOW
+    );
+
+    expect(result.map((group) => group.seriesName)).toEqual(["Recent", "Old", "Future Only"]);
+  });
+});
+
+/**
+ * Purpose: Add a release date to a provider book fixture.
+ *
+ * @param book - Provider book fixture.
+ * @param releaseDate - Release date to set.
+ * @returns The fixture with the release date.
+ */
+function withRelease(book: ProviderSeriesBook, releaseDate: string): ProviderSeriesBook {
+  return { ...book, releaseDate };
+}

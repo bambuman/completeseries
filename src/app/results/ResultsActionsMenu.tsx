@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { NativeSelectField } from "../components/NativeSelectField";
+import type { ResultsReleaseFilter } from "./releaseStatus";
 import type { ResultsSortOrder } from "./visibleResults";
+
+const RELEASE_FILTER_OPTIONS: Array<{ label: string; title: string; value: ResultsReleaseFilter }> =
+  [
+    { label: "All", title: "Show released and upcoming books", value: "all" },
+    { label: "Released", title: "Show only books you can buy now", value: "released" },
+    { label: "Upcoming", title: "Show only books that are not released yet", value: "upcoming" },
+  ];
 
 export type ResultsToolId =
   | "filters"
@@ -15,9 +23,12 @@ export type ResultsToolId =
 type ResultsActionsMenuProps = {
   lowConfidenceCount: number;
   onOpenTool: (tool: ResultsToolId) => void;
+  onReleaseFilterChange?: (releaseFilter: ResultsReleaseFilter) => void;
   onScanAgain?: () => void;
   onShowLowConfidenceChange: (showLowConfidenceResults: boolean) => void;
   onSortOrderChange: (sortOrder: ResultsSortOrder) => void;
+  releaseCounts?: Record<ResultsReleaseFilter, number>;
+  releaseFilter?: ResultsReleaseFilter;
   showLowConfidenceResults: boolean;
   sortOrder: ResultsSortOrder;
 };
@@ -47,9 +58,12 @@ type CommandBarScrollState = {
 export function ResultsActionsMenu({
   lowConfidenceCount,
   onOpenTool,
+  onReleaseFilterChange,
   onScanAgain,
   onShowLowConfidenceChange,
   onSortOrderChange,
+  releaseCounts,
+  releaseFilter = "all",
   showLowConfidenceResults,
   sortOrder,
 }: ResultsActionsMenuProps) {
@@ -136,6 +150,25 @@ export function ResultsActionsMenu({
       <nav className="results-command-bar" aria-label="Result actions" ref={commandBarRef}>
         <CommandGroup label="View">
           <SortSelect onChange={onSortOrderChange} value={sortOrder} />
+          {onReleaseFilterChange ? (
+            <div className="results-release-filter" role="group" aria-label="Release status">
+              {RELEASE_FILTER_OPTIONS.map((option) => (
+                <button
+                  aria-pressed={releaseFilter === option.value}
+                  className={`results-command-toggle${
+                    releaseFilter === option.value ? " results-command-toggle--active" : ""
+                  }`}
+                  key={option.value}
+                  title={option.title}
+                  type="button"
+                  onClick={() => onReleaseFilterChange(option.value)}
+                >
+                  {option.label}
+                  {releaseCounts ? ` (${releaseCounts[option.value]})` : ""}
+                </button>
+              ))}
+            </div>
+          ) : null}
           {lowConfidenceCount > 0 ? (
             <button
               aria-pressed={showLowConfidenceResults}
@@ -270,6 +303,10 @@ function SortSelect({
       <optgroup label="Missing count">
         <option value="missingDesc">Most missing</option>
         <option value="missingAsc">Fewest missing</option>
+      </optgroup>
+      <optgroup label="Release date">
+        <option value="releaseNext">Next release</option>
+        <option value="releaseNewest">Newest release</option>
       </optgroup>
       <optgroup label="Original">
         <option value="scanOrder">Scan order</option>

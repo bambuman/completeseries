@@ -3,6 +3,12 @@ import { findManualBookMatch, type ManualBookMatch } from "../../domain/manualBo
 import type { MissingBookGroup } from "../../domain/missingBooks";
 import { normaliseText, parseSeriesPosition } from "../../domain/normalise";
 import { isHiddenBook, isHiddenSeries, type HiddenItem } from "../storage/hiddenItemsStore";
+import {
+  filterBooksByRelease,
+  getLatestReleaseDate,
+  getNextReleaseDate,
+  type ResultsReleaseFilter,
+} from "./releaseStatus";
 
 export type VisibleMissingBookGroup = MissingBookGroup & {
   isHidden: boolean;
@@ -15,6 +21,8 @@ export type ResultsSortOrder =
   | "authorDesc"
   | "missingDesc"
   | "missingAsc"
+  | "releaseNext"
+  | "releaseNewest"
   | "scanOrder";
 
 /**
@@ -27,6 +35,9 @@ export type ResultsSortOrder =
  * @param showHiddenItems - Whether hidden books and series should remain
  * visible in the result output.
  * @param sortOrder - Display ordering for visible series groups.
+ * @param releaseFilter - Whether to show all, only released, or only upcoming
+ * books. Groups left without books are removed.
+ * @param now - Current date, supplied by tests when needed.
  * @returns Missing-book groups filtered for current visibility settings.
  */
 export function buildVisibleMissingGroups(
@@ -35,9 +46,16 @@ export function buildVisibleMissingGroups(
   manualBookMatches: ManualBookMatch[],
   region: RegionCode,
   showHiddenItems: boolean,
-  sortOrder: ResultsSortOrder = "seriesAsc"
+  sortOrder: ResultsSortOrder = "seriesAsc",
+  releaseFilter: ResultsReleaseFilter = "all",
+  now = new Date()
 ): VisibleMissingBookGroup[] {
   const visibleGroups = groups
+    .map((group) => ({
+      ...group,
+      books: filterBooksByRelease(group.books, releaseFilter, now),
+    }))
+    .filter((group) => group.books.length > 0)
     .map((group) => {
       const groupIsHidden = isHiddenSeries(hiddenItems, group);
       const visibleBooks = showHiddenItems
@@ -56,7 +74,7 @@ export function buildVisibleMissingGroups(
     })
     .filter((group) => showHiddenItems || (!group.isHidden && group.books.length > 0));
 
-  return sortVisibleGroups(visibleGroups, sortOrder);
+  return sortVisibleGroups(visibleGroups, sortOrder, now);
 }
 
 /**
@@ -81,15 +99,37 @@ function buildProviderSeriesReference(group: MissingBookGroup) {
  *
  * @param groups - Visible groups after hidden-item filtering.
  * @param sortOrder - Requested display sort order.
+ * @param now - Current date used by release-date ordering.
  * @returns A sorted copy of the visible groups.
  */
 function sortVisibleGroups(
   groups: VisibleMissingBookGroup[],
-  sortOrder: ResultsSortOrder
+  sortOrder: ResultsSortOrder,
+  now: Date
 ): VisibleMissingBookGroup[] {
   if (sortOrder === "scanOrder") return groups;
 
   return [...groups].sort((first, second) => {
+    if (sortOrder === "releaseNext") {
+      return (
+        compareByReleaseDate(
+          getNextReleaseDate(first.books, now),
+          getNextReleaseDate(second.books, now),
+          "earliest"
+        ) || compareText(first.seriesName, second.seriesName)
+      );
+    }
+
+    if (sortOrder === "releaseNewest") {
+      return (
+        compareByReleaseDate(
+          getLatestReleaseDate(first.books, now),
+          getLatestReleaseDate(second.books, now),
+          "latest"
+        ) || compareText(first.seriesName, second.seriesName)
+      );
+    }
+
     if (sortOrder === "missingDesc") {
       return (
         second.books.length - first.books.length || compareText(first.seriesName, second.seriesName)
@@ -116,6 +156,32 @@ function sortVisibleGroups(
 
     return compareText(first.seriesName, second.seriesName);
   });
+}
+
+/**
+ * Purpose: Compare two optional `YYYY-MM-DD` dates, keeping groups without a
+ * date after groups that have one.
+ *
+ * @param firstDate - First group's date, or `null`.
+ * @param secondDate - Second group's date, or `null`.
+ * @param direction - `earliest` puts sooner dates first, `latest` puts more
+ * recent dates first.
+ * @returns Standard sort comparison value.
+ */
+function compareByReleaseDate(
+  firstDate: string | null,
+  secondDate: string | null,
+  direction: "earliest" | "latest"
+): number {
+  if (firstDate && secondDate) {
+    return direction === "earliest"
+      ? firstDate.localeCompare(secondDate)
+      : secondDate.localeCompare(firstDate);
+  }
+
+  if (firstDate) return -1;
+  if (secondDate) return 1;
+  return 0;
 }
 
 /**

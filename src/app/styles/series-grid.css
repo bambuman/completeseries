@@ -186,3 +186,16 @@
 .book-diagnostics dd {
   margin: 0;
 }
+
+.series-tile--upcoming {
+  outline: 1px solid var(--upcoming-border);
+  outline-offset: 0;
+  background-color: color-mix(in srgb, var(--secondary-bg) 88%, #52a2ff);
+}
+
+.series-next-release {
+  margin: -0.4rem 0 0.4rem;
+  color: var(--upcoming-text);
+  font-size: 0.8rem;
+  font-weight: 600;
+}

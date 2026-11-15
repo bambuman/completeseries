@@ -343,3 +343,8 @@
   max-width: 60rem;
   margin: 0 auto 2rem;
 }
+
+.results-release-filter {
+  display: inline-flex;
+  gap: 0.25rem;
+}
