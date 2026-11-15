@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { ResultsReleaseFilter } from "./releaseStatus";
 import {
   clearResultsPreferences,
   defaultResultsPreferences,
@@ -9,10 +10,12 @@ import {
 import type { ResultsSortOrder } from "./visibleResults";
 
 export type ResultsDisplayPreferencesState = {
+  changeReleaseFilter: (nextReleaseFilter: ResultsReleaseFilter) => void;
   changeShowHiddenItems: (shouldShowHiddenItems: boolean) => void;
   changeSortOrder: (nextSortOrder: ResultsSortOrder) => void;
   clearResultsDisplayPreferences: () => void;
   importResultsPreferences: (preferences: ResultsPreferences) => void;
+  releaseFilter: ResultsReleaseFilter;
   showHiddenItems: boolean;
   sortOrder: ResultsSortOrder;
 };
@@ -25,12 +28,21 @@ export type ResultsDisplayPreferencesState = {
  * change.
  */
 export function useResultsDisplayPreferences(): ResultsDisplayPreferencesState {
-  const [showHiddenItems, setShowHiddenItems] = useState(
-    () => loadResultsPreferences().showHiddenItems
+  const [preferences, setPreferences] = useState<ResultsPreferences>(() =>
+    loadResultsPreferences()
   );
-  const [sortOrder, setSortOrder] = useState<ResultsSortOrder>(
-    () => loadResultsPreferences().sortOrder
-  );
+
+  /**
+   * Purpose: Apply a partial preference change to state and browser storage.
+   *
+   * @param change - Preference fields to update.
+   * @returns Nothing. State and browser storage are updated together.
+   */
+  function updatePreferences(change: Partial<ResultsPreferences>): void {
+    const nextPreferences = { ...preferences, ...change };
+    setPreferences(nextPreferences);
+    saveResultsPreferences(nextPreferences);
+  }
 
   /**
    * Purpose: Persist the selected result sort order as soon as it changes.
@@ -39,8 +51,7 @@ export function useResultsDisplayPreferences(): ResultsDisplayPreferencesState {
    * @returns Nothing. State and browser storage are updated together.
    */
   function changeSortOrder(nextSortOrder: ResultsSortOrder): void {
-    setSortOrder(nextSortOrder);
-    saveResultsPreferences({ showHiddenItems, sortOrder: nextSortOrder });
+    updatePreferences({ sortOrder: nextSortOrder });
   }
 
   /**
@@ -50,20 +61,28 @@ export function useResultsDisplayPreferences(): ResultsDisplayPreferencesState {
    * @returns Nothing. State and browser storage are updated together.
    */
   function changeShowHiddenItems(shouldShowHiddenItems: boolean): void {
-    setShowHiddenItems(shouldShowHiddenItems);
-    saveResultsPreferences({ showHiddenItems: shouldShowHiddenItems, sortOrder });
+    updatePreferences({ showHiddenItems: shouldShowHiddenItems });
+  }
+
+  /**
+   * Purpose: Persist whether all, released, or upcoming books are shown.
+   *
+   * @param nextReleaseFilter - Release filter selected by the user.
+   * @returns Nothing. State and browser storage are updated together.
+   */
+  function changeReleaseFilter(nextReleaseFilter: ResultsReleaseFilter): void {
+    updatePreferences({ releaseFilter: nextReleaseFilter });
   }
 
   /**
    * Purpose: Apply imported results-page display preferences immediately.
    *
-   * @param preferences - Imported display preferences.
+   * @param importedPreferences - Imported display preferences.
    * @returns Nothing. State and browser storage are updated together.
    */
-  function importResultsPreferences(preferences: ResultsPreferences): void {
-    setShowHiddenItems(preferences.showHiddenItems);
-    setSortOrder(preferences.sortOrder);
-    saveResultsPreferences(preferences);
+  function importResultsPreferences(importedPreferences: ResultsPreferences): void {
+    setPreferences(importedPreferences);
+    saveResultsPreferences(importedPreferences);
   }
 
   /**
@@ -74,16 +93,17 @@ export function useResultsDisplayPreferences(): ResultsDisplayPreferencesState {
    */
   function clearResultsDisplayPreferences(): void {
     clearResultsPreferences();
-    setShowHiddenItems(defaultResultsPreferences.showHiddenItems);
-    setSortOrder(defaultResultsPreferences.sortOrder);
+    setPreferences(defaultResultsPreferences);
   }
 
   return {
+    changeReleaseFilter,
     changeShowHiddenItems,
     changeSortOrder,
     clearResultsDisplayPreferences,
     importResultsPreferences,
-    showHiddenItems,
-    sortOrder,
+    releaseFilter: preferences.releaseFilter,
+    showHiddenItems: preferences.showHiddenItems,
+    sortOrder: preferences.sortOrder,
   };
 }

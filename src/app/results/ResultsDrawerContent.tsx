@@ -20,7 +20,7 @@ import { ResultsServerPanel } from "./ResultsServerPanel";
 import type { ResultsToolId } from "./ResultsActionsMenu";
 import { ReviewPanel } from "../review/ReviewPanel";
 import { exportMissingBooksCsv, exportMissingBooksJson } from "./resultsExport";
-import type { ResultsPreferences } from "./resultsPreferencesStore";
+import { loadResultsPreferences, type ResultsPreferences } from "./resultsPreferencesStore";
 import type { ConnectionFormValues } from "../setup/scanFormTypes";
 import { loadScanPreferences } from "../setup/scanPreferencesStore";
 import type { ResultsSortOrder } from "./visibleResults";
@@ -129,7 +129,7 @@ export function ResultsDrawerContent({
       manualBookMatches,
       manualSeriesMatches,
       loadScanPreferences(),
-      { showHiddenItems, sortOrder }
+      { ...loadResultsPreferences(), showHiddenItems, sortOrder }
     );
   }
 
@@ -160,7 +160,7 @@ export function ResultsDrawerContent({
         onImportManualSeriesMatches={onImportManualSeriesMatches}
         onImportResultsPreferences={onImportResultsPreferences}
         preferences={loadScanPreferences()}
-        resultsPreferences={{ showHiddenItems, sortOrder }}
+        resultsPreferences={{ ...loadResultsPreferences(), showHiddenItems, sortOrder }}
       />
     );
   }

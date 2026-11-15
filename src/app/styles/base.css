@@ -235,3 +235,9 @@ summary:focus-visible {
   font-size: 1.1rem;
   font-style: italic;
 }
+
+:root {
+  --upcoming-text: #a9d4ff;
+  --upcoming-soft: rgba(82, 162, 255, 0.1);
+  --upcoming-border: rgba(110, 180, 255, 0.6);
+}

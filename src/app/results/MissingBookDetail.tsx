@@ -20,6 +20,7 @@ import {
   type MissingBooksManualBookSource,
 } from "./missingBookDetailHelpers";
 import { ReadMoreText } from "../components/ReadMoreText";
+import { getReleaseLabel, isUpcomingBook } from "./releaseStatus";
 
 const eyeOpenUrl = new URL("../../assets/eye-open.svg", import.meta.url).href;
 const eyeClosedUrl = new URL("../../assets/eye-closed.svg", import.meta.url).href;
@@ -69,6 +70,8 @@ export function MissingBookDetail({
   const positionBadge = getBookPositionBadge(book, group);
   const canSaveManualBookMatch = Boolean(manualBookMatchSource && onSaveManualBookMatch);
   const providerPageLink = getProviderPageLink(book, manualBookMatchSource?.region);
+  const isUpcoming = isUpcomingBook(book);
+  const releaseLabel = getReleaseLabel(book);
 
   /**
    * Purpose: Save this provider book as already owned so future scans skip it
@@ -92,7 +95,9 @@ export function MissingBookDetail({
   }
 
   return (
-    <article className="book-detail-card">
+    <article
+      className={`book-detail-card${isUpcoming ? " book-detail-card--upcoming" : ""}`}
+    >
       <div className="book-detail-cover">
         <CoverImage className="book-detail-image" src={book.imageUrl} />
         {positionBadge ? <span className="book-position-badge">{positionBadge}</span> : null}
@@ -109,6 +114,12 @@ export function MissingBookDetail({
       <div className="book-detail-body">
         <h3>{book.title}</h3>
         {book.subtitle ? <p>{book.subtitle}</p> : null}
+        {releaseLabel ? (
+          <p className="book-release-line">
+            {isUpcoming ? <span className="book-upcoming-tag">Upcoming</span> : null}
+            {releaseLabel}
+          </p>
+        ) : null}
         {diagnostic ? <ReasonFlags diagnostic={diagnostic} /> : null}
         <dl className="book-detail-facts">
           <Fact label="Position" value={getBookSeriesPositions(book)} />

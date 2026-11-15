@@ -60,6 +60,55 @@ describe("MissingBooksModal", () => {
     expect(html).toContain("Merged from 2 series");
     expect(html).toContain("Discworld: Industrial Revolution");
   });
+
+  it("splits released and upcoming books into separate sections", () => {
+    const baseGroup = buildMissingGroup();
+    const html = renderToStaticMarkup(
+      <MissingBooksModal
+        group={{
+          ...baseGroup,
+          books: [
+            ...baseGroup.books,
+            {
+              ...baseGroup.books[0],
+              asin: "B0UPCOMING",
+              title: "Future Discworld",
+              releaseDate: "2999-01-01",
+            },
+          ],
+        }}
+        hiddenItems={[]}
+        manualBookMatches={[]}
+        onClose={() => undefined}
+        onHideItem={() => undefined}
+        onUnhideItem={() => undefined}
+      />
+    );
+
+    expect(html).toContain("Available now (1)");
+    expect(html).toContain("Coming soon (1)");
+    expect(html.indexOf("Monstrous Regiment")).toBeLessThan(html.indexOf("Coming soon"));
+    expect(html.indexOf("Coming soon")).toBeLessThan(html.indexOf("Future Discworld"));
+    expect(html).toContain("book-detail-card--upcoming");
+    expect(html).toContain("Upcoming</span>Releases");
+    expect(html).toContain("Released ");
+  });
+
+  it("does not add section headings when every book is released", () => {
+    const html = renderToStaticMarkup(
+      <MissingBooksModal
+        group={buildMissingGroup()}
+        hiddenItems={[]}
+        manualBookMatches={[]}
+        onClose={() => undefined}
+        onHideItem={() => undefined}
+        onUnhideItem={() => undefined}
+      />
+    );
+
+    expect(html).not.toContain("Available now");
+    expect(html).not.toContain("Coming soon");
+  });
 });
 
 /**

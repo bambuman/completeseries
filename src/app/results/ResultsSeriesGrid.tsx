@@ -5,6 +5,7 @@ import {
   isHiddenSeries,
   type HiddenItem,
 } from "../storage/hiddenItemsStore";
+import { formatReleaseDate, getNextReleaseDate, splitBooksByRelease } from "./releaseStatus";
 import type { VisibleMissingBookGroup } from "./visibleResults";
 
 const eyeOpenUrl = new URL("../../assets/eye-open.svg", import.meta.url).href;
@@ -46,7 +47,7 @@ export function ResultsSeriesGrid({
         <article
           className={`series-tile${group.isHidden ? " series-tile--hidden" : ""}${
             group.confidence ? " series-tile--low-confidence" : ""
-          }`}
+          }${isAllUpcoming(group) ? " series-tile--upcoming" : ""}`}
           key={buildSeriesTileKey(group)}
         >
           <SeriesHideButton
@@ -81,11 +82,36 @@ export function ResultsSeriesGrid({
               ) : null}
             </div>
             <h3 className="series-title">{group.seriesName}</h3>
+            <NextReleaseNote group={group} />
           </button>
         </article>
       ))}
     </div>
   );
+}
+
+/**
+ * Purpose: Show the soonest upcoming release in a series tile.
+ *
+ * @param props - Note inputs.
+ * @param props.group - Visible result group represented by the tile.
+ * @returns A short `Next release` line, or nothing when no book is upcoming.
+ */
+function NextReleaseNote({ group }: { group: VisibleMissingBookGroup }) {
+  const nextReleaseDate = formatReleaseDate(getNextReleaseDate(group.books));
+  if (!nextReleaseDate) return null;
+
+  return <p className="series-next-release">Next release: {nextReleaseDate}</p>;
+}
+
+/**
+ * Purpose: Decide whether every listed book in a tile is still unreleased.
+ *
+ * @param group - Visible result group represented by the tile.
+ * @returns `true` when the group has books and none are released yet.
+ */
+function isAllUpcoming(group: VisibleMissingBookGroup): boolean {
+  return group.books.length > 0 && splitBooksByRelease(group.books).available.length === 0;
 }
 
 /**
