@@ -1,15 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { NativeSelectField } from "../components/NativeSelectField";
 import type { ResultsReleaseFilter } from "./releaseStatus";
+import { ResultsFilterMenu, type ResultsSeriesFilter } from "./ResultsFilterMenu";
 import type { ResultsSortOrder } from "./visibleResults";
-
-const RELEASE_FILTER_OPTIONS: Array<{ label: string; value: ResultsReleaseFilter }> = [
-  { label: "All books", value: "all" },
-  { label: "Released", value: "released" },
-  { label: "Upcoming", value: "upcoming" },
-];
-
-type SeriesFilterValue = "all" | "lessConfident" | "listening";
 
 export type ResultsToolId =
   | "filters"
@@ -80,7 +73,7 @@ export function ResultsActionsMenu({
   showLowConfidenceResults,
   sortOrder,
 }: ResultsActionsMenuProps) {
-  const seriesFilter: SeriesFilterValue = listeningOnly
+  const seriesFilter: ResultsSeriesFilter = listeningOnly
     ? "listening"
     : showLowConfidenceResults && lowConfidenceCount > 0
       ? "lessConfident"
@@ -169,48 +162,22 @@ export function ResultsActionsMenu({
         <CommandGroup label="View">
           <SortSelect onChange={onSortOrderChange} value={sortOrder} />
           {onReleaseFilterChange ? (
-            <NativeSelectField
-              className={`results-filter-control${
-                releaseFilter === "all" ? "" : " results-filter-control--active"
-              }`}
-              id="resultsReleaseFilter"
-              label="Release status"
-              labelMode="hidden"
-              value={releaseFilter}
-              variant="compact"
-              onChange={onReleaseFilterChange}
-            >
-              {RELEASE_FILTER_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                  {releaseCounts ? ` (${releaseCounts[option.value]})` : ""}
-                </option>
-              ))}
-            </NativeSelectField>
-          ) : null}
-          {onListeningOnlyChange ? (
-            <NativeSelectField<SeriesFilterValue>
-              className={`results-filter-control${
-                seriesFilter === "all" ? "" : " results-filter-control--active"
-              }`}
-              id="resultsSeriesFilter"
-              label="Series shown"
-              labelMode="hidden"
-              value={seriesFilter}
-              variant="compact"
-              onChange={(value) => {
-                onListeningOnlyChange(value === "listening");
-                onShowLowConfidenceChange(value === "lessConfident");
-              }}
-            >
-              <option value="all">All series</option>
-              {lowConfidenceCount > 0 ? (
-                <option value="lessConfident">+ Less confident ({lowConfidenceCount})</option>
-              ) : null}
-              <option value="listening">
-                Listening{listeningSeriesCount !== undefined ? ` (${listeningSeriesCount})` : ""}
-              </option>
-            </NativeSelectField>
+            <ResultsFilterMenu
+              listeningSeriesCount={listeningSeriesCount}
+              lowConfidenceCount={lowConfidenceCount}
+              releaseCounts={releaseCounts}
+              releaseFilter={releaseFilter}
+              seriesFilter={seriesFilter}
+              onReleaseFilterChange={onReleaseFilterChange}
+              onSeriesFilterChange={
+                onListeningOnlyChange
+                  ? (value) => {
+                      onListeningOnlyChange(value === "listening");
+                      onShowLowConfidenceChange(value === "lessConfident");
+                    }
+                  : undefined
+              }
+            />
           ) : null}
           {!onListeningOnlyChange && lowConfidenceCount > 0 ? (
             <button

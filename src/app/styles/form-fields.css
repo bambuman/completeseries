@@ -96,6 +96,13 @@ select:hover,
 .selection-control--native {
   display: block;
   background: var(--primary-bg);
+  color-scheme: dark;
+}
+
+.selection-control--native option,
+.selection-control--native optgroup {
+  color: var(--text);
+  background-color: var(--primary-bg);
 }
 
 .selection-control--compact {
