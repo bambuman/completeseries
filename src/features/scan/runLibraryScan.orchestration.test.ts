@@ -8,6 +8,7 @@ import {
 } from "../../integrations/audiobookshelf/audiobookshelfClient";
 import { discoverProviderSeriesCandidates } from "./metadataDiscovery";
 import { runLibraryScan, type ScanOptions } from "./runLibraryScan";
+import { discoverSeriesForSeriesLessBooks } from "./seriesLessBookDiscovery";
 
 vi.mock("../../integrations/audiobookshelf/audiobookshelfClient", () => ({
   fetchAudiobookshelfBooksForLibraries: vi.fn(),
@@ -23,6 +24,10 @@ vi.mock("./metadataDiscovery", async (importOriginal) => {
     discoverProviderSeriesCandidates: vi.fn(),
   };
 });
+
+vi.mock("./seriesLessBookDiscovery", () => ({
+  discoverSeriesForSeriesLessBooks: vi.fn(),
+}));
 
 afterEach(() => {
   vi.resetAllMocks();
@@ -63,6 +68,29 @@ describe("runLibraryScan orchestration", () => {
     expect(progress).toHaveBeenCalledWith(
       "Checking metadata 1 / 1: Local Series — checking 1 provider book"
     );
+    expect(discoverSeriesForSeriesLessBooks).not.toHaveBeenCalled();
+  });
+
+  it("also scans series found for books without series metadata when enabled", async () => {
+    const seriesLessBook = { ...localSeries().books[0], id: "series-less-book", seriesNames: [] };
+    vi.mocked(resolveAuthToken).mockResolvedValue("resolved-token");
+    vi.mocked(fetchAudiobookshelfSeriesForLibraries).mockResolvedValue([]);
+    vi.mocked(fetchAudiobookshelfBooksForLibraries).mockResolvedValue([seriesLessBook]);
+    vi.mocked(discoverSeriesForSeriesLessBooks).mockResolvedValue([localSeries()]);
+    vi.mocked(discoverProviderSeriesCandidates).mockResolvedValue([providerSeries()]);
+
+    const result = await runLibraryScan({
+      ...scanOptions(),
+      discoverSeriesForSeriesLessBooks: true,
+    });
+
+    expect(discoverSeriesForSeriesLessBooks).toHaveBeenCalledWith(
+      [],
+      [seriesLessBook],
+      expect.objectContaining({ region: "uk" }),
+      undefined
+    );
+    expect(result).toMatchObject({ localSeriesCount: 1, matchedSeriesCount: 1 });
   });
 });
 
