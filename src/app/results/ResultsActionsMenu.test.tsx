@@ -47,6 +47,7 @@ describe("ResultsActionsMenu", () => {
         listeningOnly={true}
         listeningSeriesCount={7}
         lowConfidenceCount={0}
+        onReleaseFilterChange={() => undefined}
         showLowConfidenceResults={false}
         sortOrder="listenedRecent"
         onListeningOnlyChange={() => undefined}
@@ -56,9 +57,8 @@ describe("ResultsActionsMenu", () => {
       />
     );
 
-    expect(html).toContain("Listening (7)");
-    expect(html).toContain('<option value="listening" selected="">');
-    expect(html).toContain("results-filter-control--active");
+    expect(html).toContain("All books · Listening");
+    expect(html).toContain("results-filter-menu__button--active");
     expect(html).toContain("Recently listened");
   });
   it("offers less-confident results in the series dropdown when listening is available", () => {
@@ -66,6 +66,7 @@ describe("ResultsActionsMenu", () => {
       <ResultsActionsMenu
         listeningSeriesCount={3}
         lowConfidenceCount={2}
+        onReleaseFilterChange={() => undefined}
         showLowConfidenceResults={true}
         sortOrder="seriesAsc"
         onListeningOnlyChange={() => undefined}
@@ -75,7 +76,7 @@ describe("ResultsActionsMenu", () => {
       />
     );
 
-    expect(html).toContain('<option value="lessConfident" selected="">+ Less confident (2)</option>');
+    expect(html).toContain("All books · Less confident");
     expect(html).not.toContain("results-command-toggle");
   });
 });
