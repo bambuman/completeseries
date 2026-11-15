@@ -4,12 +4,14 @@ import type { ResultsSortOrder } from "./visibleResults";
 export const RESULTS_PREFERENCES_STORAGE_KEY = "completeSeries.resultsPreferences.v2";
 
 export type ResultsPreferences = {
+  listeningOnly: boolean;
   releaseFilter: ResultsReleaseFilter;
   showHiddenItems: boolean;
   sortOrder: ResultsSortOrder;
 };
 
 export const defaultResultsPreferences: ResultsPreferences = {
+  listeningOnly: false,
   releaseFilter: "all",
   showHiddenItems: false,
   sortOrder: "seriesAsc",
@@ -24,6 +26,7 @@ const SORT_ORDERS: ResultsSortOrder[] = [
   "missingAsc",
   "releaseNext",
   "releaseNewest",
+  "listenedRecent",
   "scanOrder",
 ];
 
@@ -103,6 +106,10 @@ function normaliseResultsPreferences(
   preferences: Partial<ResultsPreferences>
 ): ResultsPreferences {
   return {
+    listeningOnly:
+      typeof preferences.listeningOnly === "boolean"
+        ? preferences.listeningOnly
+        : defaultResultsPreferences.listeningOnly,
     releaseFilter: RESULTS_RELEASE_FILTERS.includes(
       preferences.releaseFilter as ResultsReleaseFilter
     )

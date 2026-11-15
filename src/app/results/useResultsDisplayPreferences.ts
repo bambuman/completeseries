@@ -10,11 +10,13 @@ import {
 import type { ResultsSortOrder } from "./visibleResults";
 
 export type ResultsDisplayPreferencesState = {
+  changeListeningOnly: (shouldShowListeningOnly: boolean) => void;
   changeReleaseFilter: (nextReleaseFilter: ResultsReleaseFilter) => void;
   changeShowHiddenItems: (shouldShowHiddenItems: boolean) => void;
   changeSortOrder: (nextSortOrder: ResultsSortOrder) => void;
   clearResultsDisplayPreferences: () => void;
   importResultsPreferences: (preferences: ResultsPreferences) => void;
+  listeningOnly: boolean;
   releaseFilter: ResultsReleaseFilter;
   showHiddenItems: boolean;
   sortOrder: ResultsSortOrder;
@@ -75,6 +77,16 @@ export function useResultsDisplayPreferences(): ResultsDisplayPreferencesState {
   }
 
   /**
+   * Purpose: Persist whether only series the user has started are shown.
+   *
+   * @param shouldShowListeningOnly - Whether to limit results to started series.
+   * @returns Nothing. State and browser storage are updated together.
+   */
+  function changeListeningOnly(shouldShowListeningOnly: boolean): void {
+    updatePreferences({ listeningOnly: shouldShowListeningOnly });
+  }
+
+  /**
    * Purpose: Apply imported results-page display preferences immediately.
    *
    * @param importedPreferences - Imported display preferences.
@@ -97,11 +109,13 @@ export function useResultsDisplayPreferences(): ResultsDisplayPreferencesState {
   }
 
   return {
+    changeListeningOnly,
     changeReleaseFilter,
     changeShowHiddenItems,
     changeSortOrder,
     clearResultsDisplayPreferences,
     importResultsPreferences,
+    listeningOnly: preferences.listeningOnly,
     releaseFilter: preferences.releaseFilter,
     showHiddenItems: preferences.showHiddenItems,
     sortOrder: preferences.sortOrder,

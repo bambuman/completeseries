@@ -1,4 +1,5 @@
 import type { ProviderSeriesBook, RegionCode } from "./audiobook";
+import type { SeriesListeningStatus } from "./listeningProgress";
 import type { ManualBookMatch } from "./manualBookMatches";
 
 export type MissingBookOptions = {
@@ -52,6 +53,8 @@ export type MissingBookGroup = {
   providerName?: string;
   confidence?: MissingBookConfidence;
   mergedFrom?: MergedSeriesSource[];
+  /** Owned books of this series the user has finished or started. */
+  listening?: SeriesListeningStatus;
   books: ProviderSeriesBook[];
   diagnosticsByAsin: Record<string, MissingBookDiagnostic>;
   debugDecisions: MissingBookDebugDecision[];

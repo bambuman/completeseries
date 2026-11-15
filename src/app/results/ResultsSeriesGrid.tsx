@@ -82,12 +82,44 @@ export function ResultsSeriesGrid({
               ) : null}
             </div>
             <h3 className="series-title">{group.seriesName}</h3>
+            <ListeningNote group={group} />
             <NextReleaseNote group={group} />
           </button>
         </article>
       ))}
     </div>
   );
+}
+
+/**
+ * Purpose: Show how far the user has got with the owned books of a series.
+ *
+ * @param props - Note inputs.
+ * @param props.group - Visible result group represented by the tile.
+ * @returns A short listening line, or nothing when the series is not started.
+ */
+function ListeningNote({ group }: { group: VisibleMissingBookGroup }) {
+  const label = getListeningLabel(group);
+  if (!label) return null;
+
+  return <p className="series-listening">{label}</p>;
+}
+
+/**
+ * Purpose: Describe the listening status of a series in a few words.
+ *
+ * @param group - Missing-book group that may carry listening progress.
+ * @returns For example `Listening · 3 finished`, or `null` when not started.
+ */
+export function getListeningLabel(group: Pick<MissingBookGroup, "listening">): string | null {
+  const listening = group.listening;
+  if (!listening) return null;
+
+  const parts = [
+    listening.inProgressCount > 0 ? "Listening" : null,
+    listening.finishedCount > 0 ? `${listening.finishedCount} finished` : null,
+  ].filter(Boolean);
+  return parts.join(" · ");
 }
 
 /**

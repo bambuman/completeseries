@@ -21,7 +21,10 @@ export type ResultsToolId =
   | "debug";
 
 type ResultsActionsMenuProps = {
+  listeningOnly?: boolean;
+  listeningSeriesCount?: number;
   lowConfidenceCount: number;
+  onListeningOnlyChange?: (listeningOnly: boolean) => void;
   onOpenTool: (tool: ResultsToolId) => void;
   onReleaseFilterChange?: (releaseFilter: ResultsReleaseFilter) => void;
   onScanAgain?: () => void;
@@ -43,8 +46,14 @@ type CommandBarScrollState = {
  * stay reachable without extra menu clicks.
  *
  * @param props - Result action callbacks.
+ * @param props.listeningOnly - Whether only series the user has started are
+ * shown.
+ * @param props.listeningSeriesCount - Number of visible series the user has
+ * started.
  * @param props.lowConfidenceCount - Number of tentative result groups
  * available behind the explicit low-confidence toggle.
+ * @param props.onListeningOnlyChange - Callback that toggles the started-series
+ * filter.
  * @param props.onOpenTool - Callback that opens a result tool drawer.
  * @param props.onScanAgain - Optional callback that repeats the last scan.
  * @param props.onShowLowConfidenceChange - Callback that toggles tentative
@@ -56,7 +65,10 @@ type CommandBarScrollState = {
  * @returns Responsive result action navigation.
  */
 export function ResultsActionsMenu({
+  listeningOnly = false,
+  listeningSeriesCount,
   lowConfidenceCount,
+  onListeningOnlyChange,
   onOpenTool,
   onReleaseFilterChange,
   onScanAgain,
@@ -168,6 +180,19 @@ export function ResultsActionsMenu({
                 </button>
               ))}
             </div>
+          ) : null}
+          {onListeningOnlyChange ? (
+            <button
+              aria-pressed={listeningOnly}
+              className={`results-command-toggle${
+                listeningOnly ? " results-command-toggle--active" : ""
+              }`}
+              type="button"
+              title="Show only series where you have finished or started a book"
+              onClick={() => onListeningOnlyChange(!listeningOnly)}
+            >
+              Listening{listeningSeriesCount !== undefined ? ` (${listeningSeriesCount})` : ""}
+            </button>
           ) : null}
           {lowConfidenceCount > 0 ? (
             <button
@@ -303,6 +328,9 @@ function SortSelect({
       <optgroup label="Missing count">
         <option value="missingDesc">Most missing</option>
         <option value="missingAsc">Fewest missing</option>
+      </optgroup>
+      <optgroup label="Listening">
+        <option value="listenedRecent">Recently listened</option>
       </optgroup>
       <optgroup label="Release date">
         <option value="releaseNext">Next release</option>

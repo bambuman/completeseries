@@ -23,6 +23,7 @@ export type ResultsSortOrder =
   | "missingAsc"
   | "releaseNext"
   | "releaseNewest"
+  | "listenedRecent"
   | "scanOrder";
 
 /**
@@ -130,6 +131,12 @@ function sortVisibleGroups(
       );
     }
 
+    if (sortOrder === "listenedRecent") {
+      return (
+        compareByLastListened(first, second) || compareText(first.seriesName, second.seriesName)
+      );
+    }
+
     if (sortOrder === "missingDesc") {
       return (
         second.books.length - first.books.length || compareText(first.seriesName, second.seriesName)
@@ -182,6 +189,34 @@ function compareByReleaseDate(
   if (firstDate) return -1;
   if (secondDate) return 1;
   return 0;
+}
+
+/**
+ * Purpose: Order groups by when the user last listened to a book in the series,
+ * most recent first, with series the user has not started last.
+ *
+ * @param first - First visible result group to compare.
+ * @param second - Second visible result group to compare.
+ * @returns Standard sort comparison value.
+ */
+function compareByLastListened(
+  first: VisibleMissingBookGroup,
+  second: VisibleMissingBookGroup
+): number {
+  const firstTime = first.listening ? (first.listening.lastListenedAt ?? 0) : -1;
+  const secondTime = second.listening ? (second.listening.lastListenedAt ?? 0) : -1;
+  return secondTime - firstTime;
+}
+
+/**
+ * Purpose: Keep only result groups for series the user has finished or started
+ * a book in.
+ *
+ * @param groups - Missing-book groups.
+ * @returns Groups that carry listening progress.
+ */
+export function filterListeningGroups<T extends MissingBookGroup>(groups: T[]): T[] {
+  return groups.filter((group) => Boolean(group.listening));
 }
 
 /**

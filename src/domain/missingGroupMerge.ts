@@ -5,6 +5,7 @@ import type {
   MissingBookDiagnostic,
   MissingBookGroup,
 } from "./missingBookTypes";
+import { mergeListeningStatus } from "./listeningProgress";
 import { normaliseIdentifier, normaliseText } from "./normalise";
 
 /**
@@ -27,6 +28,7 @@ export function mergeMissingBookGroups(groups: MissingBookGroup[]): MissingBookG
 
     rememberMergedSeriesSource(mergedGroup, group);
     mergedGroup.debugDecisions.push(...group.debugDecisions);
+    applyListeningStatus(mergedGroup, group);
 
     for (const book of group.books) {
       const bookKeys = buildGlobalBookKeys(book);
@@ -36,6 +38,7 @@ export function mergeMissingBookGroups(groups: MissingBookGroup[]): MissingBookG
         if (existingOwner && existingOwner !== mergedGroup) {
           rememberMergedSeriesSource(existingOwner, group);
           existingOwner.debugDecisions.push(...group.debugDecisions);
+          applyListeningStatus(existingOwner, group);
         }
         continue;
       }
@@ -53,6 +56,19 @@ export function mergeMissingBookGroups(groups: MissingBookGroup[]): MissingBookG
   return [...mergedGroupsByKey.values()]
     .filter((group) => group.books.length > 0)
     .map(removeSingleSourceMergeMetadata);
+}
+
+/**
+ * Purpose: Carry a source group's listening status onto the merged group.
+ *
+ * @param targetGroup - Merged group being built.
+ * @param sourceGroup - Group whose books are being merged in.
+ * @returns Nothing. The target group is updated in place when there is
+ * listening progress to keep.
+ */
+function applyListeningStatus(targetGroup: MissingBookGroup, sourceGroup: MissingBookGroup): void {
+  const listening = mergeListeningStatus(targetGroup.listening, sourceGroup.listening);
+  if (listening) targetGroup.listening = listening;
 }
 
 /**

@@ -3,6 +3,7 @@ import type { LocalSeriesEvidence, ProviderSeriesCandidate } from "../../domain/
 import { parseSeriesPosition } from "../../domain/normalise";
 import {
   fetchAudiobookshelfBooksForLibraries,
+  fetchAudiobookshelfListeningProgress,
   fetchAudiobookshelfSeriesForLibraries,
   resolveAuthToken,
 } from "../../integrations/audiobookshelf/audiobookshelfClient";
@@ -12,6 +13,7 @@ import { runLibraryScan, type ScanOptions } from "./runLibraryScan";
 vi.mock("../../integrations/audiobookshelf/audiobookshelfClient", () => ({
   fetchAudiobookshelfBooksForLibraries: vi.fn(),
   fetchAudiobookshelfLibraries: vi.fn(),
+  fetchAudiobookshelfListeningProgress: vi.fn(),
   fetchAudiobookshelfSeriesForLibraries: vi.fn(),
   resolveAuthToken: vi.fn(),
 }));
@@ -62,6 +64,42 @@ describe("runLibraryScan orchestration", () => {
     expect(result.seriesReports).toHaveLength(1);
     expect(progress).toHaveBeenCalledWith(
       "Checking metadata 1 / 1: Local Series — checking 1 provider book"
+    );
+  });
+
+  it("marks result groups for series the user has started", async () => {
+    vi.mocked(resolveAuthToken).mockResolvedValue("resolved-token");
+    vi.mocked(fetchAudiobookshelfSeriesForLibraries).mockResolvedValue([localSeries()]);
+    vi.mocked(fetchAudiobookshelfBooksForLibraries).mockResolvedValue([]);
+    vi.mocked(fetchAudiobookshelfListeningProgress).mockResolvedValue([
+      { libraryItemId: "local-book", isFinished: true, progress: 1, lastUpdate: 42 },
+    ]);
+    vi.mocked(discoverProviderSeriesCandidates).mockResolvedValue([providerSeriesWithBookTwo()]);
+
+    const result = await runLibraryScan(scanOptions());
+
+    expect(result.missingGroups).toHaveLength(1);
+    expect(result.missingGroups[0].listening).toEqual({
+      finishedCount: 1,
+      inProgressCount: 0,
+      lastListenedAt: 42,
+    });
+  });
+
+  it("keeps scanning when listening progress cannot be loaded", async () => {
+    vi.mocked(resolveAuthToken).mockResolvedValue("resolved-token");
+    vi.mocked(fetchAudiobookshelfSeriesForLibraries).mockResolvedValue([localSeries()]);
+    vi.mocked(fetchAudiobookshelfBooksForLibraries).mockResolvedValue([]);
+    vi.mocked(fetchAudiobookshelfListeningProgress).mockRejectedValue(new Error("forbidden"));
+    vi.mocked(discoverProviderSeriesCandidates).mockResolvedValue([providerSeriesWithBookTwo()]);
+    const progress = vi.fn();
+
+    const result = await runLibraryScan(scanOptions(), progress);
+
+    expect(result.missingGroups).toHaveLength(1);
+    expect(result.missingGroups[0]).not.toHaveProperty("listening");
+    expect(progress).toHaveBeenCalledWith(
+      "Listening progress is unavailable; continuing without it."
     );
   });
 });
@@ -143,6 +181,28 @@ function providerSeries(): ProviderSeriesCandidate {
         isAvailable: true,
         isBuyable: true,
         series: [{ asin: "SERIES1", name: "Local Series", position: "1" }],
+      },
+    ],
+  };
+}
+
+/**
+ * Purpose: Build a provider series that has one book the local series is
+ * missing.
+ *
+ * @returns Provider series candidate fixture with books 1 and 2.
+ */
+function providerSeriesWithBookTwo(): ProviderSeriesCandidate {
+  const series = providerSeries();
+  return {
+    ...series,
+    books: [
+      ...series.books,
+      {
+        ...series.books[0],
+        asin: "B456",
+        title: "Second Book",
+        series: [{ asin: "SERIES1", name: "Local Series", position: "2" }],
       },
     ],
   };

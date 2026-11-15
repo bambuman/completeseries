@@ -13,6 +13,7 @@ describe("resultsPreferencesStore", () => {
     );
 
     expect(preferences).toEqual({
+      listeningOnly: false,
       releaseFilter: "all",
       showHiddenItems: true,
       sortOrder: "authorDesc",
@@ -30,6 +31,7 @@ describe("resultsPreferencesStore", () => {
     );
 
     expect(preferences).toEqual({
+      listeningOnly: false,
       releaseFilter: "all",
       showHiddenItems: true,
       sortOrder: "seriesAsc",
@@ -48,6 +50,7 @@ describe("resultsPreferencesStore", () => {
     );
 
     expect(preferences).toEqual({
+      listeningOnly: false,
       releaseFilter: "upcoming",
       showHiddenItems: false,
       sortOrder: "releaseNext",
@@ -64,5 +67,13 @@ describe("resultsPreferencesStore", () => {
 
   it("returns null when a payload has no results preferences", () => {
     expect(parseResultsPreferencesPayload(JSON.stringify({ hiddenItems: [] }))).toBeNull();
+  });
+  it("imports the listening filter and recently-listened sort", () => {
+    const preferences = parseResultsPreferencesPayload(
+      JSON.stringify({ resultsPreferences: { listeningOnly: true, sortOrder: "listenedRecent" } })
+    );
+
+    expect(preferences?.listeningOnly).toBe(true);
+    expect(preferences?.sortOrder).toBe("listenedRecent");
   });
 });

@@ -1,4 +1,5 @@
 import type { LocalBookEvidence, LocalSeriesEvidence } from "../../domain/audiobook";
+import type { ListeningProgressEntry } from "../../domain/listeningProgress";
 import {
   mapAudiobookshelfSeriesResponse,
   mapLibraryItemToLocalBook,
@@ -15,6 +16,7 @@ import type {
   AudiobookshelfLibrariesResponse,
   AudiobookshelfLibrary,
   AudiobookshelfLoginResponse,
+  AudiobookshelfMeResponse,
   AudiobookshelfSeriesResponse,
 } from "./audiobookshelfTypes";
 
@@ -190,6 +192,44 @@ export async function fetchAudiobookshelfBooksForLibraries(
   }
 
   return localBooks;
+}
+
+/**
+ * Purpose: Fetch the signed-in user's listening progress, so results can show
+ * which series the user has already started.
+ *
+ * @param config - Audiobookshelf connection settings, including the base URL
+ * and either an API key or username/password credentials.
+ * @returns Book listening progress for the user who owns the credentials.
+ * Podcast episode progress is left out.
+ */
+export async function fetchAudiobookshelfListeningProgress(
+  config: AudiobookshelfClientConfig
+): Promise<ListeningProgressEntry[]> {
+  const authToken = await resolveAuthToken(config);
+  const response = await fetchAudiobookshelfResponse(
+    buildAudiobookshelfUrl(config.baseUrl, "/api/me"),
+    {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${authToken}`,
+      },
+    },
+    config.baseUrl,
+    "progress"
+  );
+
+  if (!response.ok) throw await buildHttpStatusError(response, "progress");
+
+  const payload = await readAudiobookshelfJson<AudiobookshelfMeResponse>(response, "progress");
+  return (payload.mediaProgress ?? [])
+    .filter((entry) => entry.libraryItemId && !entry.episodeId)
+    .map((entry) => ({
+      libraryItemId: String(entry.libraryItemId),
+      isFinished: entry.isFinished === true,
+      progress: Number(entry.progress) || 0,
+      lastUpdate: Number.isFinite(entry.lastUpdate) ? Number(entry.lastUpdate) : null,
+    }));
 }
 
 /**

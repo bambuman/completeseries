@@ -41,4 +41,23 @@ describe("ResultsActionsMenu", () => {
     expect(html).toContain("disabled");
     expect(html).not.toContain("Less confident");
   });
+  it("shows the listening toggle with its series count", () => {
+    const html = renderToStaticMarkup(
+      <ResultsActionsMenu
+        listeningOnly={true}
+        listeningSeriesCount={7}
+        lowConfidenceCount={0}
+        showLowConfidenceResults={false}
+        sortOrder="listenedRecent"
+        onListeningOnlyChange={() => undefined}
+        onOpenTool={() => undefined}
+        onShowLowConfidenceChange={() => undefined}
+        onSortOrderChange={() => undefined}
+      />
+    );
+
+    expect(html).toContain("Listening (7)");
+    expect(html).toContain('aria-pressed="true"');
+    expect(html).toContain("Recently listened");
+  });
 });

@@ -31,7 +31,26 @@ export type AudiobookshelfLoginResponse = {
   };
 };
 
-export type AudiobookshelfRequestContext = "books" | "libraries" | "login" | "series";
+export type AudiobookshelfRequestContext =
+  | "books"
+  | "libraries"
+  | "login"
+  | "progress"
+  | "series";
+
+export type AudiobookshelfMediaProgress = {
+  libraryItemId?: string | null;
+  episodeId?: string | null;
+  progress?: number | null;
+  currentTime?: number | null;
+  isFinished?: boolean | null;
+  lastUpdate?: number | null;
+  finishedAt?: number | null;
+};
+
+export type AudiobookshelfMeResponse = {
+  mediaProgress?: AudiobookshelfMediaProgress[];
+};
 
 export type AudiobookshelfNamedValue = string | { name?: string | null };
 

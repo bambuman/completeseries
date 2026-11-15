@@ -3,6 +3,11 @@ import type {
   LocalSeriesEvidence,
   RegionCode,
 } from "../../domain/audiobook";
+import {
+  buildListeningProgressIndex,
+  summariseSeriesListening,
+  type ListeningProgressIndex,
+} from "../../domain/listeningProgress";
 import type { ManualBookMatch } from "../../domain/manualBookMatches";
 import {
   matchLocalSeriesToProviderSeries,
@@ -13,8 +18,10 @@ import type { MissingBookGroup } from "../../domain/missingBooks";
 import {
   fetchAudiobookshelfBooksForLibraries,
   fetchAudiobookshelfLibraries,
+  fetchAudiobookshelfListeningProgress,
   fetchAudiobookshelfSeriesForLibraries,
   type AudiobookshelfAuthConfig,
+  type AudiobookshelfClientConfig,
   type AudiobookshelfLibrary,
 } from "../../integrations/audiobookshelf/audiobookshelfClient";
 import {
@@ -141,6 +148,7 @@ export async function runLibraryScan(
     libraries,
     progress
   );
+  const listeningProgress = await loadListeningProgress(authenticatedConfig, progress);
   const allLocalBooks = mergeLocalBookEvidence([
     ...localSeries.flatMap((series) => series.books),
     ...localLibraryBooks,
@@ -198,7 +206,11 @@ export async function runLibraryScan(
         reason: match.reason,
       };
 
-      if (lowConfidenceGroup) lowConfidenceMissingGroups.push(lowConfidenceGroup);
+      if (lowConfidenceGroup) {
+        lowConfidenceMissingGroups.push(
+          withListeningStatus(lowConfidenceGroup, series.books, listeningProgress)
+        );
+      }
       unresolvedSeries.push(unresolved);
       seriesReports.push(
         buildUnresolvedSeriesReport(
@@ -245,7 +257,9 @@ export async function runLibraryScan(
         providerTraces
       )
     );
-    if (missingGroup.books.length > 0) missingGroups.push(missingGroup);
+    if (missingGroup.books.length > 0) {
+      missingGroups.push(withListeningStatus(missingGroup, series.books, listeningProgress));
+    }
   }
 
   const mergedMissingGroups = mergeMissingBookGroups(missingGroups);
@@ -261,6 +275,47 @@ export async function runLibraryScan(
     unresolvedSeries,
     seriesReports,
   };
+}
+
+/**
+ * Purpose: Load the user's listening progress without letting a failure stop
+ * the scan.
+ *
+ * @param config - Authenticated Audiobookshelf connection settings.
+ * @param progress - Optional status callback.
+ * @returns Listening progress keyed by library item id, or an empty index when
+ * it could not be loaded.
+ */
+async function loadListeningProgress(
+  config: AudiobookshelfClientConfig,
+  progress?: (message: string) => void
+): Promise<ListeningProgressIndex> {
+  progress?.("Fetching listening progress...");
+
+  try {
+    return buildListeningProgressIndex(await fetchAudiobookshelfListeningProgress(config));
+  } catch {
+    progress?.("Listening progress is unavailable; continuing without it.");
+    return new Map();
+  }
+}
+
+/**
+ * Purpose: Attach the series listening status to a result group.
+ *
+ * @param group - Missing-book group for one local series.
+ * @param books - Owned books of that local series.
+ * @param index - Listening progress keyed by library item id.
+ * @returns The same group, with `listening` set when the user has started or
+ * finished any owned book of the series.
+ */
+function withListeningStatus(
+  group: MissingBookGroup,
+  books: LocalBookEvidence[],
+  index: ListeningProgressIndex
+): MissingBookGroup {
+  const listening = summariseSeriesListening(books, index);
+  return listening ? { ...group, listening } : group;
 }
 
 /**
