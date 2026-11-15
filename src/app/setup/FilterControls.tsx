@@ -63,6 +63,14 @@ export function FilterControls({ filters, onChange }: FilterControlsProps) {
           label="Include subseries results"
           onChange={(includeSubSeries) => onChange({ includeSubSeries })}
         />
+        <CheckboxRow
+          checked={filters.discoverSeriesForSeriesLessBooks ?? false}
+          helpText="Looks up books that have an ASIN but no series in Audiobookshelf, and scans the series the catalogue lists for them."
+          label="Find series for books without series metadata"
+          onChange={(discoverSeriesForSeriesLessBooks) =>
+            onChange({ discoverSeriesForSeriesLessBooks })
+          }
+        />
       </FilterGroup>
 
       <FilterGroup title="Series Position">

@@ -24,6 +24,7 @@ export type ConnectionFormValues = {
 export type ScanFilters = Pick<
   ScanOptions,
   | "includeSubSeries"
+  | "discoverSeriesForSeriesLessBooks"
   | "metadataLookupMode"
   | "metadataProviderIds"
   | "metadataProviderSearchMode"
@@ -45,6 +46,7 @@ export type ScanFilters = Pick<
 
 export const defaultScanFilters: ScanFilters = {
   includeSubSeries: false,
+  discoverSeriesForSeriesLessBooks: true,
   metadataLookupMode: "balanced" satisfies MetadataLookupMode,
   metadataProviderIds: defaultMetadataProviderIds satisfies MetadataProviderId[],
   metadataProviderSearchMode:

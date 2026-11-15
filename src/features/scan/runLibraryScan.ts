@@ -36,6 +36,7 @@ import {
 } from "./missingGroupBuilder";
 import { enrichLocalBooksWithProviderMetadata } from "./ownedMetadataEnrichment";
 import { buildAuthenticatedConfig, filterSelectedLibraries } from "./scanSession";
+import { discoverSeriesForSeriesLessBooks } from "./seriesLessBookDiscovery";
 import {
   buildMatchedSeriesReport,
   buildUnresolvedSeriesReport,
@@ -63,6 +64,7 @@ export type ScanOptions = AudiobookshelfAuthConfig & {
   selectedLibraryIds?: string[];
   region: RegionCode;
   includeSubSeries: boolean;
+  discoverSeriesForSeriesLessBooks?: boolean;
   manualSeriesMatches?: ManualSeriesMatch[];
   metadataLookupMode: MetadataLookupMode;
   metadataProviderIds: MetadataProviderId[];
@@ -130,7 +132,7 @@ export async function runLibraryScan(
 
   if (libraries.length === 0) throw new Error("No audiobook libraries were found.");
 
-  const localSeries = await fetchAudiobookshelfSeriesForLibraries(
+  const audiobookshelfSeries = await fetchAudiobookshelfSeriesForLibraries(
     authenticatedConfig,
     libraries,
     progress
@@ -141,6 +143,17 @@ export async function runLibraryScan(
     libraries,
     progress
   );
+  const localSeries = options.discoverSeriesForSeriesLessBooks
+    ? [
+        ...audiobookshelfSeries,
+        ...(await discoverSeriesForSeriesLessBooks(
+          audiobookshelfSeries,
+          localLibraryBooks,
+          options,
+          progress
+        )),
+      ]
+    : audiobookshelfSeries;
   const allLocalBooks = mergeLocalBookEvidence([
     ...localSeries.flatMap((series) => series.books),
     ...localLibraryBooks,

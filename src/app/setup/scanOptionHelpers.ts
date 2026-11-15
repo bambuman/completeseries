@@ -11,6 +11,7 @@ import type { ScanFilters } from "./scanFormTypes";
 export function extractScanFilters(scanOptions: ScanOptions): ScanFilters {
   return {
     includeSubSeries: scanOptions.includeSubSeries,
+    discoverSeriesForSeriesLessBooks: scanOptions.discoverSeriesForSeriesLessBooks,
     metadataLookupMode: scanOptions.metadataLookupMode,
     metadataProviderIds: scanOptions.metadataProviderIds,
     metadataProviderSearchMode: scanOptions.metadataProviderSearchMode,

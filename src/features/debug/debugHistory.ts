@@ -27,6 +27,7 @@ export type DebugHistoryEntry = {
 const FILTER_LABELS: Array<[keyof ScanOptions, string]> = [
   ["onlyUnabridged", "Only unabridged"],
   ["includeSubSeries", "Subseries included"],
+  ["discoverSeriesForSeriesLessBooks", "Series-less books looked up"],
   ["ignoreMultiBooks", "Omnibus hidden"],
   ["ignoreNoPositionBooks", "No-position books hidden"],
   ["ignoreSubPositionBooks", "Decimal positions hidden"],
