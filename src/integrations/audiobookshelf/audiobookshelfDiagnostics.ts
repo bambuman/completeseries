@@ -135,6 +135,8 @@ function describeRequestAction(context: AudiobookshelfRequestContext): string {
       return "loading Audiobookshelf libraries";
     case "login":
       return "logging in to Audiobookshelf";
+    case "progress":
+      return "loading Audiobookshelf listening progress";
     case "series":
       return "loading Audiobookshelf series";
   }
@@ -154,6 +156,8 @@ function describeMissingEndpoint(context: AudiobookshelfRequestContext): string 
       return "Complete Series reached the server, but the Audiobookshelf libraries endpoint was not found";
     case "login":
       return "Complete Series reached the server, but the Audiobookshelf login endpoint was not found";
+    case "progress":
+      return "Complete Series reached the server, but the Audiobookshelf user endpoint was not found";
     case "series":
       return "Complete Series reached the server, but the Audiobookshelf series endpoint was not found";
   }

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   fetchAudiobookshelfBooksForLibraries,
   fetchAudiobookshelfLibraries,
+  fetchAudiobookshelfListeningProgress,
   mapAudiobookshelfSeriesResponse,
   resolveAuthToken,
 } from "./audiobookshelfClient";
@@ -297,5 +298,43 @@ describe("fetchAudiobookshelfBooksForLibraries", () => {
         seriesNames: ["Discworld"],
       },
     ]);
+  });
+});
+
+describe("fetchAudiobookshelfListeningProgress", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("reads book progress for the signed-in user and skips podcast episodes", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          mediaProgress: [
+            { libraryItemId: "book-1", progress: 1, isFinished: true, lastUpdate: 200 },
+            { libraryItemId: "book-2", progress: 0.25, isFinished: false, lastUpdate: 100 },
+            { libraryItemId: "podcast", episodeId: "ep-1", progress: 0.5 },
+          ],
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    );
+
+    await expect(
+      fetchAudiobookshelfListeningProgress({
+        baseUrl: "https://abs.example.com",
+        mode: "apiKey",
+        apiKey: "abc123",
+      })
+    ).resolves.toEqual([
+      { libraryItemId: "book-1", isFinished: true, progress: 1, lastUpdate: 200 },
+      { libraryItemId: "book-2", isFinished: false, progress: 0.25, lastUpdate: 100 },
+    ]);
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      "https://abs.example.com/api/me",
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: "Bearer abc123" }),
+      })
+    );
   });
 });

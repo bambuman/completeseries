@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ProviderSeriesBook } from "../../domain/audiobook";
 import type { MissingBookGroup } from "../../domain/missingBooks";
-import { buildVisibleMissingGroups } from "./visibleResults";
+import { buildVisibleMissingGroups, filterListeningGroups } from "./visibleResults";
 
 describe("buildVisibleMissingGroups", () => {
   it("sorts visible series alphabetically by default", () => {
@@ -289,3 +289,35 @@ describe("buildVisibleMissingGroups release dates", () => {
 function withRelease(book: ProviderSeriesBook, releaseDate: string): ProviderSeriesBook {
   return { ...book, releaseDate };
 }
+
+describe("listening progress in results", () => {
+  const listened = (lastListenedAt: number | null) => ({
+    finishedCount: 1,
+    inProgressCount: 0,
+    lastListenedAt,
+  });
+
+  it("keeps only series the user has started", () => {
+    const groups = [
+      { ...buildGroup("Started", "S1", [buildBook("A", "A1", "2")]), listening: listened(5) },
+      buildGroup("Untouched", "S2", [buildBook("B", "B1", "2")]),
+    ];
+
+    expect(filterListeningGroups(groups).map((group) => group.seriesName)).toEqual(["Started"]);
+  });
+
+  it("sorts by most recently listened, with unstarted series last", () => {
+    const groups = [
+      buildGroup("Untouched", "S1", [buildBook("A", "A1", "2")]),
+      { ...buildGroup("Older", "S2", [buildBook("B", "B1", "2")]), listening: listened(100) },
+      { ...buildGroup("Newer", "S3", [buildBook("C", "C1", "2")]), listening: listened(900) },
+      { ...buildGroup("No date", "S4", [buildBook("D", "D1", "2")]), listening: listened(null) },
+    ];
+
+    expect(
+      buildVisibleMissingGroups(groups, [], [], "uk", false, "listenedRecent").map(
+        (group) => group.seriesName
+      )
+    ).toEqual(["Newer", "Older", "No date", "Untouched"]);
+  });
+});

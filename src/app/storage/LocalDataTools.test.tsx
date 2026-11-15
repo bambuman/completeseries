@@ -71,6 +71,7 @@ describe("LocalDataTools", () => {
           selectedLibraryIds: ["fiction"],
         }}
         resultsPreferences={{
+          listeningOnly: false,
           releaseFilter: "all",
           showHiddenItems: true,
           sortOrder: "authorAsc",

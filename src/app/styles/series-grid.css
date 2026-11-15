@@ -199,3 +199,10 @@
   font-size: 0.8rem;
   font-weight: 600;
 }
+
+.series-listening {
+  margin: -0.4rem 0 0.4rem;
+  color: var(--listening-text);
+  font-size: 0.8rem;
+  font-weight: 600;
+}

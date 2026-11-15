@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { MissingBookGroup } from "../../domain/missingBooks";
 import type { ProviderSeriesBook } from "../../domain/audiobook";
-import { getTileCoverBook, ResultsSeriesGrid } from "./ResultsSeriesGrid";
+import { getListeningLabel, getTileCoverBook, ResultsSeriesGrid } from "./ResultsSeriesGrid";
 import type { VisibleMissingBookGroup } from "./visibleResults";
 
 describe("ResultsSeriesGrid", () => {
@@ -140,3 +140,15 @@ function buildCoverGroup(books: ProviderSeriesBook[]): VisibleMissingBookGroup {
     isHidden: false,
   };
 }
+
+describe("getListeningLabel", () => {
+  const label = (finishedCount: number, inProgressCount: number) =>
+    getListeningLabel({ listening: { finishedCount, inProgressCount, lastListenedAt: 1 } });
+
+  it("describes started and finished books", () => {
+    expect(label(3, 1)).toBe("Listening · 3 finished");
+    expect(label(2, 0)).toBe("2 finished");
+    expect(label(0, 1)).toBe("Listening");
+    expect(getListeningLabel({})).toBeNull();
+  });
+});

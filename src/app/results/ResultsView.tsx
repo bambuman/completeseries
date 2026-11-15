@@ -25,6 +25,7 @@ import { useResultsDisplayPreferences } from "./useResultsDisplayPreferences";
 import {
   buildVisibleMissingGroups,
   countHiddenResultItems,
+  filterListeningGroups,
 } from "./visibleResults";
 
 type ResultsViewProps = {
@@ -106,19 +107,32 @@ export function ResultsView({
   const [showLowConfidenceResults, setShowLowConfidenceResults] = useState(false);
   const [activeTool, setActiveTool] = useState<ResultsTool>(null);
   const {
+    changeListeningOnly,
     changeReleaseFilter,
     changeShowHiddenItems,
     changeSortOrder,
     clearResultsDisplayPreferences,
     importResultsPreferences,
+    listeningOnly,
     releaseFilter,
     showHiddenItems,
     sortOrder,
   } = useResultsDisplayPreferences();
   const lowConfidenceMissingGroups = result.lowConfidenceMissingGroups ?? [];
-  const displayedMissingGroups = showLowConfidenceResults
+  const confidenceMissingGroups = showLowConfidenceResults
     ? [...result.missingGroups, ...lowConfidenceMissingGroups]
     : result.missingGroups;
+  const listeningMissingGroups = filterListeningGroups(confidenceMissingGroups);
+  const displayedMissingGroups = listeningOnly ? listeningMissingGroups : confidenceMissingGroups;
+  const listeningSeriesCount = buildVisibleMissingGroups(
+    listeningMissingGroups,
+    hiddenItems,
+    manualBookMatches,
+    lastScanOptions?.region ?? "uk",
+    showHiddenItems,
+    sortOrder,
+    releaseFilter
+  ).length;
   const buildGroupsForReleaseFilter = (filter: ResultsReleaseFilter) =>
     buildVisibleMissingGroups(
       displayedMissingGroups,
@@ -157,7 +171,10 @@ export function ResultsView({
       />
 
       <ResultsActionsMenu
+        listeningOnly={listeningOnly}
+        listeningSeriesCount={listeningSeriesCount}
         lowConfidenceCount={lowConfidenceMissingGroups.length}
+        onListeningOnlyChange={changeListeningOnly}
         onOpenTool={setActiveTool}
         onReleaseFilterChange={changeReleaseFilter}
         releaseCounts={releaseCounts}
@@ -181,8 +198,17 @@ export function ResultsView({
         />
       ) : (
         <EmptyState title="No missing books shown">
-          Your current filters did not find any visible gaps. If that feels wrong, open Review
-          matching to inspect how the series matched.
+          {listeningOnly && listeningSeriesCount === 0 ? (
+            <>
+              None of the series you have started have missing books with these filters. Turn off
+              Listening to see every series.
+            </>
+          ) : (
+            <>
+              Your current filters did not find any visible gaps. If that feels wrong, open Review
+              matching to inspect how the series matched.
+            </>
+          )}
         </EmptyState>
       )}
 

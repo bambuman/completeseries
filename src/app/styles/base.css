@@ -238,6 +238,7 @@ summary:focus-visible {
 
 :root {
   --upcoming-text: #a9d4ff;
+  --listening-text: #8fe0a6;
   --upcoming-soft: rgba(82, 162, 255, 0.2);
   --upcoming-border: rgba(110, 180, 255, 0.85);
 }
