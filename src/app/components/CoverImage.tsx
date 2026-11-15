@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 const placeholderUrl = new URL("../../assets/book-placeholder.svg", import.meta.url).href;
 
@@ -19,14 +19,19 @@ type CoverImageProps = {
  * @returns A cover image element that falls back to the local placeholder.
  */
 export function CoverImage({ alt = "", className = "series-image", src }: CoverImageProps) {
-  const [hasLoaded, setHasLoaded] = useState(false);
-  const [hasErrored, setHasErrored] = useState(false);
-  const imageSource = src && !hasErrored ? src : placeholderUrl;
+  // Remember which URL loaded or failed instead of a flag that an effect
+  // resets: a cached cover can fire `load` before such an effect runs, which
+  // left the image stuck in its dimmed loading state after a re-scan.
+  const [loadedSource, setLoadedSource] = useState<string | null>(null);
+  const [erroredSource, setErroredSource] = useState<string | null>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const imageSource = src && erroredSource !== src ? src : placeholderUrl;
+  const hasLoaded = loadedSource === imageSource;
 
-  useEffect(() => {
-    setHasLoaded(false);
-    setHasErrored(false);
-  }, [src]);
+  useLayoutEffect(() => {
+    const image = imageRef.current;
+    if (image?.complete && image.naturalWidth > 0) setLoadedSource(imageSource);
+  }, [imageSource]);
 
   return (
     <img
@@ -34,8 +39,11 @@ export function CoverImage({ alt = "", className = "series-image", src }: CoverI
       className={`${className}${hasLoaded ? " cover-image--loaded" : " cover-image--loading"}`}
       decoding="async"
       loading="lazy"
-      onError={() => setHasErrored(true)}
-      onLoad={() => setHasLoaded(true)}
+      onError={() => {
+        if (src && imageSource === src) setErroredSource(src);
+      }}
+      onLoad={() => setLoadedSource(imageSource)}
+      ref={imageRef}
       referrerPolicy="no-referrer"
       src={imageSource}
     />
