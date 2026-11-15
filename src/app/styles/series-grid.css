@@ -188,9 +188,9 @@
 }
 
 .series-tile--upcoming {
-  outline: 1px solid var(--upcoming-border);
+  outline: 2px solid var(--upcoming-border);
   outline-offset: 0;
-  background-color: color-mix(in srgb, var(--secondary-bg) 88%, #52a2ff);
+  background-color: color-mix(in srgb, var(--secondary-bg) 75%, #52a2ff);
 }
 
 .series-next-release {
