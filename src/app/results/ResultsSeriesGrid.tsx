@@ -63,7 +63,7 @@ export function ResultsSeriesGrid({
           >
             <div className="series-badge">{group.books.length}</div>
             <div className="series-image-wrap">
-              <CoverImage src={group.books[0]?.imageUrl} />
+              <CoverImage src={getTileCoverBook(group)?.imageUrl} />
               {isMergedGroup(group) ? (
                 <span
                   className="series-merged-note"
@@ -102,6 +102,17 @@ function NextReleaseNote({ group }: { group: VisibleMissingBookGroup }) {
   if (!nextReleaseDate) return null;
 
   return <p className="series-next-release">Next release: {nextReleaseDate}</p>;
+}
+
+/**
+ * Purpose: Pick the book whose cover represents a tile, preferring a book that
+ * is already out so a series with a buyable book does not look upcoming.
+ *
+ * @param group - Visible result group represented by the tile.
+ * @returns The first released book, or the first book when none are released.
+ */
+export function getTileCoverBook(group: VisibleMissingBookGroup) {
+  return splitBooksByRelease(group.books).available[0] ?? group.books[0];
 }
 
 /**

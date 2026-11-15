@@ -368,6 +368,7 @@
 
 .book-detail-card--upcoming {
   border-color: var(--upcoming-border);
+  border-left: 4px solid var(--upcoming-text);
   background: var(--upcoming-soft);
 }
 

@@ -1,7 +1,9 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { MissingBookGroup } from "../../domain/missingBooks";
-import { ResultsSeriesGrid } from "./ResultsSeriesGrid";
+import type { ProviderSeriesBook } from "../../domain/audiobook";
+import { getTileCoverBook, ResultsSeriesGrid } from "./ResultsSeriesGrid";
+import type { VisibleMissingBookGroup } from "./visibleResults";
 
 describe("ResultsSeriesGrid", () => {
   it("shows a confidence badge on low-confidence result cards", () => {
@@ -92,5 +94,49 @@ function buildGroup(): MissingBookGroup {
     ],
     diagnosticsByAsin: {},
     debugDecisions: [],
+  };
+}
+
+describe("getTileCoverBook", () => {
+  it("prefers a released book over an earlier-listed upcoming one", () => {
+    const upcoming = buildDatedBook("UPCOMING", "2999-01-05");
+    const released = buildDatedBook("RELEASED", "2025-12-02");
+
+    expect(getTileCoverBook(buildCoverGroup([upcoming, released]))?.asin).toBe("RELEASED");
+  });
+
+  it("falls back to the first book when nothing is released yet", () => {
+    const first = buildDatedBook("FIRST", "2999-01-05");
+    const second = buildDatedBook("SECOND", "2999-02-05");
+
+    expect(getTileCoverBook(buildCoverGroup([first, second]))?.asin).toBe("FIRST");
+  });
+});
+
+/**
+ * Purpose: Build a provider book fixture with a release date.
+ *
+ * @param asin - Book ASIN.
+ * @param releaseDate - Release date.
+ * @returns Provider book fixture.
+ */
+function buildDatedBook(asin: string, releaseDate: string): ProviderSeriesBook {
+  return { asin, title: asin, authors: [], narrators: [], releaseDate, series: [] };
+}
+
+/**
+ * Purpose: Build a visible result group around the given books.
+ *
+ * @param books - Books in display order.
+ * @returns Visible result group fixture.
+ */
+function buildCoverGroup(books: ProviderSeriesBook[]): VisibleMissingBookGroup {
+  return {
+    seriesName: "Backyard Starship",
+    seriesAsin: "series-backyard-starship",
+    books,
+    diagnosticsByAsin: {},
+    debugDecisions: [],
+    isHidden: false,
   };
 }

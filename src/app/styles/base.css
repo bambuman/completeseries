@@ -238,6 +238,6 @@ summary:focus-visible {
 
 :root {
   --upcoming-text: #a9d4ff;
-  --upcoming-soft: rgba(82, 162, 255, 0.1);
-  --upcoming-border: rgba(110, 180, 255, 0.6);
+  --upcoming-soft: rgba(82, 162, 255, 0.2);
+  --upcoming-border: rgba(110, 180, 255, 0.85);
 }
