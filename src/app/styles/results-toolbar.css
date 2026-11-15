@@ -206,7 +206,7 @@
 }
 
 .results-sort-control {
-  width: 10.5rem;
+  width: 9.5rem;
   min-width: 0;
 }
 
@@ -344,7 +344,16 @@
   margin: 0 auto 2rem;
 }
 
-.results-release-filter {
-  display: inline-flex;
-  gap: 0.25rem;
+.results-filter-control {
+  width: 9rem;
+  min-width: 0;
+}
+
+.results-filter-control .selection-control {
+  margin-top: 0;
+}
+
+.results-filter-control--active .selection-control {
+  border-color: var(--accent);
+  background-color: rgba(255, 153, 0, 0.12);
 }

@@ -3,12 +3,13 @@ import { NativeSelectField } from "../components/NativeSelectField";
 import type { ResultsReleaseFilter } from "./releaseStatus";
 import type { ResultsSortOrder } from "./visibleResults";
 
-const RELEASE_FILTER_OPTIONS: Array<{ label: string; title: string; value: ResultsReleaseFilter }> =
-  [
-    { label: "All", title: "Show released and upcoming books", value: "all" },
-    { label: "Released", title: "Show only books you can buy now", value: "released" },
-    { label: "Upcoming", title: "Show only books that are not released yet", value: "upcoming" },
-  ];
+const RELEASE_FILTER_OPTIONS: Array<{ label: string; value: ResultsReleaseFilter }> = [
+  { label: "All books", value: "all" },
+  { label: "Released", value: "released" },
+  { label: "Upcoming", value: "upcoming" },
+];
+
+type SeriesFilterValue = "all" | "lessConfident" | "listening";
 
 export type ResultsToolId =
   | "filters"
@@ -79,6 +80,11 @@ export function ResultsActionsMenu({
   showLowConfidenceResults,
   sortOrder,
 }: ResultsActionsMenuProps) {
+  const seriesFilter: SeriesFilterValue = listeningOnly
+    ? "listening"
+    : showLowConfidenceResults && lowConfidenceCount > 0
+      ? "lessConfident"
+      : "all";
   const commandBarRef = useRef<HTMLElement>(null);
   const [scrollState, setScrollState] = useState<CommandBarScrollState>({
     canScrollLeft: false,
@@ -163,38 +169,50 @@ export function ResultsActionsMenu({
         <CommandGroup label="View">
           <SortSelect onChange={onSortOrderChange} value={sortOrder} />
           {onReleaseFilterChange ? (
-            <div className="results-release-filter" role="group" aria-label="Release status">
+            <NativeSelectField
+              className={`results-filter-control${
+                releaseFilter === "all" ? "" : " results-filter-control--active"
+              }`}
+              id="resultsReleaseFilter"
+              label="Release status"
+              labelMode="hidden"
+              value={releaseFilter}
+              variant="compact"
+              onChange={onReleaseFilterChange}
+            >
               {RELEASE_FILTER_OPTIONS.map((option) => (
-                <button
-                  aria-pressed={releaseFilter === option.value}
-                  className={`results-command-toggle${
-                    releaseFilter === option.value ? " results-command-toggle--active" : ""
-                  }`}
-                  key={option.value}
-                  title={option.title}
-                  type="button"
-                  onClick={() => onReleaseFilterChange(option.value)}
-                >
+                <option key={option.value} value={option.value}>
                   {option.label}
                   {releaseCounts ? ` (${releaseCounts[option.value]})` : ""}
-                </button>
+                </option>
               ))}
-            </div>
+            </NativeSelectField>
           ) : null}
           {onListeningOnlyChange ? (
-            <button
-              aria-pressed={listeningOnly}
-              className={`results-command-toggle${
-                listeningOnly ? " results-command-toggle--active" : ""
+            <NativeSelectField<SeriesFilterValue>
+              className={`results-filter-control${
+                seriesFilter === "all" ? "" : " results-filter-control--active"
               }`}
-              type="button"
-              title="Show only series where you have finished or started a book"
-              onClick={() => onListeningOnlyChange(!listeningOnly)}
+              id="resultsSeriesFilter"
+              label="Series shown"
+              labelMode="hidden"
+              value={seriesFilter}
+              variant="compact"
+              onChange={(value) => {
+                onListeningOnlyChange(value === "listening");
+                onShowLowConfidenceChange(value === "lessConfident");
+              }}
             >
-              Listening{listeningSeriesCount !== undefined ? ` (${listeningSeriesCount})` : ""}
-            </button>
+              <option value="all">All series</option>
+              {lowConfidenceCount > 0 ? (
+                <option value="lessConfident">+ Less confident ({lowConfidenceCount})</option>
+              ) : null}
+              <option value="listening">
+                Listening{listeningSeriesCount !== undefined ? ` (${listeningSeriesCount})` : ""}
+              </option>
+            </NativeSelectField>
           ) : null}
-          {lowConfidenceCount > 0 ? (
+          {!onListeningOnlyChange && lowConfidenceCount > 0 ? (
             <button
               aria-pressed={showLowConfidenceResults}
               className={`results-command-toggle${
